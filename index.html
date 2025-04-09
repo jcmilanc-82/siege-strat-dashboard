@@ -5,28 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Siege Strat Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Optional: Styling for hiding/showing elements based on language selection */
+    .hidden-en { display: none; }
+    .hidden-es { display: none; }
+  </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen p-4">
   <div class="max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-4">Siege Strat Dashboard</h1>
 
+    <!-- Language Toggle Buttons -->
+    <div class="mb-4">
+      <button onclick="switchLanguage('en')" class="p-2 mr-2 bg-gray-800 rounded">English</button>
+      <button onclick="switchLanguage('es')" class="p-2 bg-gray-800 rounded">Español</button>
+    </div>
+
+    <!-- Select Map and Site -->
     <div class="mb-4">
       <label class="block mb-2">Select Map:</label>
       <select id="map-select" class="w-full p-2 rounded bg-gray-800 text-white">
         <option value="clubhouse">Clubhouse</option>
+        <option value="oregon">Oregon</option>
       </select>
     </div>
 
     <div class="mb-4">
       <label class="block mb-2">Select Site:</label>
       <select id="site-select" class="w-full p-2 rounded bg-gray-800 text-white">
-        <option value="cctv_cache">CCTV & Cache</option>
+        <!-- Dynamically populated -->
       </select>
     </div>
 
-    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-      <h2 class="text-xl font-semibold mb-2">Strat: Default Setup</h2>
-      <p class="mb-4">Basic setup for Clubhouse CCTV & Cache defense.</p>
+    <!-- Strat Details (Content for both languages) -->
+    <div id="strat-container" class="bg-gray-800 p-4 rounded-lg shadow-lg hidden">
+      <h2 id="strat-title" class="text-xl font-semibold mb-2"></h2>
+      <p id="strat-description" class="mb-4"></p>
 
       <table class="w-full table-auto text-sm">
         <thead>
@@ -36,41 +50,98 @@
             <th class="p-2 text-left">Tasks</th>
           </tr>
         </thead>
-        <tbody>
-          <tr class="border-t border-gray-600">
-            <td class="p-2">Castle</td>
-            <td class="p-2">Anchor</td>
-            <td class="p-2">Reinforce Construction wall, Castle off Cache door, Place shield in Cache</td>
-          </tr>
-          <tr class="border-t border-gray-600">
-            <td class="p-2">Jäger</td>
-            <td class="p-2">Flex</td>
-            <td class="p-2">ADS top Red stairs, roam early Construction</td>
-          </tr>
-          <tr class="border-t border-gray-600">
-            <td class="p-2">Mute</td>
-            <td class="p-2">Anchor</td>
-            <td class="p-2">Mute jammers on drone holes, reinforce CCTV wall</td>
-          </tr>
-          <tr class="border-t border-gray-600">
-            <td class="p-2">Bandit</td>
-            <td class="p-2">Denial</td>
-            <td class="p-2">Trick CCTV wall, place wire on Red stairs</td>
-          </tr>
-          <tr class="border-t border-gray-600">
-            <td class="p-2">Smoke</td>
-            <td class="p-2">Anchor</td>
-            <td class="p-2">Shield in Cache, rotate Construction to Cache, anchor deep</td>
-          </tr>
-        </tbody>
+        <tbody id="strat-operators"></tbody>
       </table>
 
       <div class="mt-4">
         <h3 class="font-semibold mb-1">Video Reference:</h3>
-        <iframe class="w-full aspect-video rounded" src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE" frameborder="0" allowfullscreen></iframe>
+        <iframe id="strat-video" class="w-full aspect-video rounded" frameborder="0" allowfullscreen></iframe>
       </div>
     </div>
   </div>
 
+  <script>
+    // Language data (English and Spanish)
+    const strats = {
+      clubhouse: {
+        "cctv_cache": {
+          en: {
+            title: "Default Setup",
+            description: "Basic setup for Clubhouse CCTV & Cache defense.",
+            videoId: "YOUTUBE_VIDEO_ID_1",
+            operators: [
+              { name: "Castle", role: "Anchor", tasks: "Reinforce Construction wall, Castle off Cache door, Place shield in Cache" },
+              { name: "Jäger", role: "Flex", tasks: "ADS top Red stairs, roam early Construction" },
+              { name: "Mute", role: "Anchor", tasks: "Mute jammers on drone holes, reinforce CCTV wall" },
+              { name: "Bandit", role: "Denial", tasks: "Trick CCTV wall, place wire on Red stairs" },
+              { name: "Smoke", role: "Anchor", tasks: "Shield in Cache, rotate Construction to Cache, anchor deep" }
+            ]
+          },
+          es: {
+            title: "Configuración Predeterminada",
+            description: "Configuración básica para la defensa de CCTV y Cache en Clubhouse.",
+            videoId: "YOUTUBE_VIDEO_ID_1",
+            operators: [
+              { name: "Castle", role: "Ancla", tasks: "Refuerza la pared de Construction, coloca Castle en la puerta de Cache, coloca un escudo en Cache" },
+              { name: "Jäger", role: "Flexible", tasks: "ADS en la parte superior de las escaleras rojas, patrullar temprano en Construction" },
+              { name: "Mute", role: "Ancla", tasks: "Coloca bloqueadores de drones, refuerza la pared de CCTV" },
+              { name: "Bandit", role: "Negación", tasks: "Trick en la pared de CCTV, coloca cables en las escaleras rojas" },
+              { name: "Smoke", role: "Ancla", tasks: "Escudo en Cache, rota de Construction a Cache, posición de ancla profunda" }
+            ]
+          }
+        }
+      }
+    };
+
+    const mapSelect = document.getElementById("map-select");
+    const siteSelect = document.getElementById("site-select");
+    const stratContainer = document.getElementById("strat-container");
+    const stratTitle = document.getElementById("strat-title");
+    const stratDescription = document.getElementById("strat-description");
+    const stratOperators = document.getElementById("strat-operators");
+    const stratVideo = document.getElementById("strat-video");
+
+    let currentLanguage = 'en'; // Default to English
+
+    function populateSites() {
+      const selectedMap = mapSelect.value;
+      siteSelect.innerHTML = "";
+      const sites = Object.keys(strats[selectedMap]);
+      sites.forEach(site => {
+        const option = document.createElement("option");
+        option.value = site;
+        option.textContent = site.replace("_", " & ").replace(/\b\w/g, c => c.toUpperCase());
+        siteSelect.appendChild(option);
+      });
+      showStrat();
+    }
+
+    function showStrat() {
+      const map = mapSelect.value;
+      const site = siteSelect.value;
+      const strat = strats[map][site][currentLanguage];
+
+      stratTitle.textContent = `Strat: ${strat.title}`;
+      stratDescription.textContent = strat.description;
+      stratOperators.innerHTML = "";
+      strat.operators.forEach(op => {
+        const row = `<tr class='border-t border-gray-600'><td class='p-2'>${op.name}</td><td class='p-2'>${op.role}</td><td class='p-2'>${op.tasks}</td></tr>`;
+        stratOperators.innerHTML += row;
+      });
+      stratVideo.src = `https://www.youtube.com/embed/${strat.videoId}`;
+      stratContainer.classList.remove("hidden");
+    }
+
+    function switchLanguage(lang) {
+      currentLanguage = lang;
+      populateSites(); // Re-populate sites with selected language
+    }
+
+    mapSelect.addEventListener("change", populateSites);
+    siteSelect.addEventListener("change", showStrat);
+
+    populateSites(); // Initial load
+
+  </script>
 </body>
 </html>
