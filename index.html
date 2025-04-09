@@ -1,22 +1,29 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tablero de Estrategias de Siege</title>
+  <title>Siege Strat Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Estilos opcionales para ocultar/mostrar elementos */
-    .hidden { display: none; }
+    /* Optional: Styling for hiding/showing elements based on language selection */
+    .hidden-en { display: none; }
+    .hidden-es { display: none; }
   </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen p-4">
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Tablero de Estrategias de Siege</h1>
+    <h1 class="text-3xl font-bold mb-4">Siege Strat Dashboard</h1>
 
-    <!-- Seleccionar Mapa y Sitio -->
+    <!-- Language Toggle Buttons -->
     <div class="mb-4">
-      <label class="block mb-2">Selecciona el Mapa:</label>
+      <button onclick="switchLanguage('en')" class="p-2 mr-2 bg-gray-800 rounded">English</button>
+      <button onclick="switchLanguage('es')" class="p-2 bg-gray-800 rounded">Español</button>
+    </div>
+
+    <!-- Select Map and Site -->
+    <div class="mb-4">
+      <label class="block mb-2">Select Map:</label>
       <select id="map-select" class="w-full p-2 rounded bg-gray-800 text-white">
         <option value="clubhouse">Clubhouse</option>
         <option value="oregon">Oregon</option>
@@ -24,13 +31,13 @@
     </div>
 
     <div class="mb-4">
-      <label class="block mb-2">Selecciona el Sitio:</label>
+      <label class="block mb-2">Select Site:</label>
       <select id="site-select" class="w-full p-2 rounded bg-gray-800 text-white">
-        <!-- Se llenará dinámicamente -->
+        <!-- Dynamically populated -->
       </select>
     </div>
 
-    <!-- Detalles de Estrategia -->
+    <!-- Strat Details (Content for both languages) -->
     <div id="strat-container" class="bg-gray-800 p-4 rounded-lg shadow-lg hidden">
       <h2 id="strat-title" class="text-xl font-semibold mb-2"></h2>
       <p id="strat-description" class="mb-4"></p>
@@ -38,26 +45,38 @@
       <table class="w-full table-auto text-sm">
         <thead>
           <tr class="bg-gray-700">
-            <th class="p-2 text-left">Operador</th>
-            <th class="p-2 text-left">Rol</th>
-            <th class="p-2 text-left">Tareas</th>
+            <th class="p-2 text-left">Operator</th>
+            <th class="p-2 text-left">Role</th>
+            <th class="p-2 text-left">Tasks</th>
           </tr>
         </thead>
         <tbody id="strat-operators"></tbody>
       </table>
 
       <div class="mt-4">
-        <h3 class="font-semibold mb-1">Video de Referencia:</h3>
+        <h3 class="font-semibold mb-1">Video Reference:</h3>
         <iframe id="strat-video" class="w-full aspect-video rounded" frameborder="0" allowfullscreen></iframe>
       </div>
     </div>
   </div>
 
   <script>
-    // Datos de Estrategias (Solo en español)
+    // Language data (English and Spanish)
     const strats = {
       clubhouse: {
         "cctv_cache": {
+          en: {
+            title: "Default Setup",
+            description: "Basic setup for Clubhouse CCTV & Cache defense.",
+            videoId: "YOUTUBE_VIDEO_ID_1",
+            operators: [
+              { name: "Castle", role: "Anchor", tasks: "Reinforce Construction wall, Castle off Cache door, Place shield in Cache" },
+              { name: "Jäger", role: "Flex", tasks: "ADS top Red stairs, roam early Construction" },
+              { name: "Mute", role: "Anchor", tasks: "Mute jammers on drone holes, reinforce CCTV wall" },
+              { name: "Bandit", role: "Denial", tasks: "Trick CCTV wall, place wire on Red stairs" },
+              { name: "Smoke", role: "Anchor", tasks: "Shield in Cache, rotate Construction to Cache, anchor deep" }
+            ]
+          },
           es: {
             title: "Configuración Predeterminada",
             description: "Configuración básica para la defensa de CCTV y Cache en Clubhouse.",
@@ -71,22 +90,6 @@
             ]
           }
         }
-      },
-      oregon: {
-        "kidnap": {
-          es: {
-            title: "Configuración de Defensa de Kidnap",
-            description: "Estrategia de defensa para el sitio Kidnap en Oregon.",
-            videoId: "YOUTUBE_VIDEO_ID_2",
-            operators: [
-              { name: "Lesion", role: "Ancla", tasks: "Coloca trampas en puertas y ventanas, mantiene la posición cerca de la bomba" },
-              { name: "Mira", role: "Ancla", tasks: "Posiciónate en el sitio y vigila la entrada principal" },
-              { name: "Doc", role: "Soporte", tasks: "Mantén la vigilancia sobre las entradas y revive a compañeros de ser necesario" },
-              { name: "Rook", role: "Soporte", tasks: "Coloca la armadura en el sitio y cubre las entradas" },
-              { name: "Bandit", role: "Negación", tasks: "Trick en paredes electrificadas, refuerza la bomba" }
-            ]
-          }
-        }
       }
     };
 
@@ -97,6 +100,8 @@
     const stratDescription = document.getElementById("strat-description");
     const stratOperators = document.getElementById("strat-operators");
     const stratVideo = document.getElementById("strat-video");
+
+    let currentLanguage = 'en'; // Default to English
 
     function populateSites() {
       const selectedMap = mapSelect.value;
@@ -114,9 +119,9 @@
     function showStrat() {
       const map = mapSelect.value;
       const site = siteSelect.value;
-      const strat = strats[map][site].es; // Solo en español
+      const strat = strats[map][site][currentLanguage];
 
-      stratTitle.textContent = `Estrategia: ${strat.title}`;
+      stratTitle.textContent = `Strat: ${strat.title}`;
       stratDescription.textContent = strat.description;
       stratOperators.innerHTML = "";
       strat.operators.forEach(op => {
@@ -127,10 +132,16 @@
       stratContainer.classList.remove("hidden");
     }
 
+    function switchLanguage(lang) {
+      currentLanguage = lang;
+      populateSites(); // Re-populate sites with selected language
+    }
+
     mapSelect.addEventListener("change", populateSites);
     siteSelect.addEventListener("change", showStrat);
 
-    populateSites(); // Cargar el mapa y sitio inicial
+    populateSites(); // Initial load
+
   </script>
 </body>
 </html>
